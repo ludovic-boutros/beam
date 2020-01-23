@@ -136,6 +136,7 @@ public class Elasticsearch7IOWritingTest implements Serializable {
         .assertFailedDocumentCount(0)
         .assertSuccessDocumentCount(COUNT)
         .assertFinalESDocumentCount(COUNT)
+        .assertOrdered(true)
         .build()
         .run();
   }

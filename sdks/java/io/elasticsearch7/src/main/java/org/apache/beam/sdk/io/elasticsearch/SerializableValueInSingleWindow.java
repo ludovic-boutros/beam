@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
 import org.apache.beam.sdk.transforms.windowing.GlobalWindow;
@@ -42,54 +43,65 @@ import org.joda.time.Instant;
 public class SerializableValueInSingleWindow<T extends Writeable & DocWriteRequest<T>>
     extends ValueInSingleWindow<T> implements Serializable {
 
-  private ValueInSingleWindow<T> window;
+  private T value;
+  private Instant timestamp;
+  private BoundedWindow window;
+  private PaneInfo pane;
 
-  private SerializableValueInSingleWindow(ValueInSingleWindow<T> window) {
+  private SerializableValueInSingleWindow(
+      T value, Instant timestamp, BoundedWindow window, PaneInfo pane) {
+    this.value = value;
+    this.timestamp = timestamp;
     this.window = window;
+    this.pane = pane;
   }
 
   public static <T extends Writeable & DocWriteRequest<T>> SerializableValueInSingleWindow<T> of(
       T value, Instant timestamp, BoundedWindow window, PaneInfo paneInfo) {
-    return of(ValueInSingleWindow.of(value, timestamp, window, paneInfo));
-  }
-
-  public static <T extends Writeable & DocWriteRequest<T>> SerializableValueInSingleWindow<T> of(
-      ValueInSingleWindow<T> delegate) {
-    return new SerializableValueInSingleWindow<>(delegate);
+    return new SerializableValueInSingleWindow<>(value, timestamp, window, paneInfo);
   }
 
   @Nullable
   @Override
   public T getValue() {
-    return window.getValue();
+    return value;
   }
 
   @Override
   public Instant getTimestamp() {
-    return window.getTimestamp();
+    return timestamp;
   }
 
   @Override
   public BoundedWindow getWindow() {
-    return window.getWindow();
+    return window;
   }
 
   @Override
   public PaneInfo getPane() {
-    return window.getPane();
+    return pane;
   }
 
   private void writeObject(ObjectOutputStream oos) throws IOException {
-    getCoder().encode(window, oos);
+    Class<? extends BoundedWindow> windowClass = window.getClass();
+    oos.writeObject(windowClass);
+    getCoder(windowClass).encode(this, oos);
   }
 
+  @SuppressWarnings("unchecked")
   private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-    window = getCoder().decode(ois);
+    Class<? extends BoundedWindow> windowClass = (Class<? extends BoundedWindow>) ois.readObject();
+    ValueInSingleWindow<T> decoded = getCoder(windowClass).decode(ois);
+
+    this.value = decoded.getValue();
+    this.timestamp = decoded.getTimestamp();
+    this.window = decoded.getWindow();
+    this.pane = decoded.getPane();
   }
 
-  private ValueInSingleWindow.Coder<T> getCoder() {
+  private ValueInSingleWindow.Coder<T> getCoder(Class<? extends BoundedWindow> theClass) {
     org.apache.beam.sdk.coders.Coder<? extends BoundedWindow> windowCoder =
-        getWindowCoder(getWindow());
+        getWindowCoder(theClass);
     org.apache.beam.sdk.coders.Coder<T> valueCoder = WriteableCoder.of();
 
     return Coder.of(valueCoder, windowCoder);
@@ -100,15 +112,41 @@ public class SerializableValueInSingleWindow<T extends Writeable & DocWriteReque
    *
    * <p>Two options actually exist: {@link GlobalWindow} or {@link IntervalWindow} coders.
    *
-   * @param window the window to be encoded
+   * @param theType the window type to be encoded
    * @return the {@link Coder}
    */
   private static org.apache.beam.sdk.coders.Coder<? extends BoundedWindow> getWindowCoder(
-      BoundedWindow window) {
-    if (window instanceof GlobalWindow) {
+      Class<? extends BoundedWindow> theType) {
+    if (theType.equals(GlobalWindow.class)) {
       return GlobalWindow.Coder.INSTANCE;
-    } else {
+    } else if (theType.equals(IntervalWindow.class)) {
       return IntervalWindow.getCoder();
+    } else {
+      throw new UnsupportedOperationException("Unknown window type.");
     }
+  }
+
+  /**
+   * Elasticsearch requests do not define hashCode and equals functions. We use their string
+   * representation for now in order to compare them.
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SerializableValueInSingleWindow<?> that = (SerializableValueInSingleWindow<?>) o;
+    return Objects.equals(value.toString(), that.value.toString())
+        && Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(window, that.window)
+        && Objects.equals(pane, that.pane);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(value.toString(), timestamp, window, pane);
   }
 }

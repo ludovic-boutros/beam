@@ -40,7 +40,6 @@ import org.apache.beam.sdk.io.elasticsearch.utils.ElasticsearchWithSSLContainer;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -103,9 +102,6 @@ public class Elasticsearch7IOReadingTest implements Serializable {
 
     deleteIndex(restHighLevelClient, ES_INDEX_NAME);
   }
-
-  @After
-  public void tearDown() {}
 
   @Test
   public void readingTest() throws IOException {

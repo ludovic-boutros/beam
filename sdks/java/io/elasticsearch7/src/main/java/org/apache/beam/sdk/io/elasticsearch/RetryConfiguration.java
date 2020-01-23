@@ -89,7 +89,7 @@ public abstract class RetryConfiguration implements Serializable {
    */
   static class DefaultRetryPredicate implements RetryPredicate {
 
-    private int errorCode;
+    private final int errorCode;
 
     DefaultRetryPredicate(int code) {
       this.errorCode = code;

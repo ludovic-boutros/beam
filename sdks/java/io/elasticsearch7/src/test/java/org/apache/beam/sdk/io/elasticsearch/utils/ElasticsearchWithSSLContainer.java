@@ -113,7 +113,7 @@ public class ElasticsearchWithSSLContainer extends GenericContainer<Elasticsearc
     /** Basic Authorization scheme prefix. */
     private static final String AUTH_BASIC = "Basic ";
 
-    private Set<Integer> statusCodes = new HashSet<>();
+    private final Set<Integer> statusCodes = new HashSet<>();
     private String username;
     private String password;
     private Predicate<Integer> statusCodePredicate = null;

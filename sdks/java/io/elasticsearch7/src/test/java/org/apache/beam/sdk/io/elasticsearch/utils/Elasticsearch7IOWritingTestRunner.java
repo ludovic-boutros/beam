@@ -18,6 +18,7 @@
 package org.apache.beam.sdk.io.elasticsearch.utils;
 
 import static org.apache.beam.sdk.io.elasticsearch.utils.Elasticsearch7IOTestUtils.assertBatchContainsMaxElementCount;
+import static org.apache.beam.sdk.io.elasticsearch.utils.Elasticsearch7IOTestUtils.assertBatchOrder;
 import static org.apache.beam.sdk.io.elasticsearch.utils.Elasticsearch7IOTestUtils.assertResultContains;
 import static org.apache.beam.sdk.io.elasticsearch.utils.Elasticsearch7IOTestUtils.generateDocuments;
 
@@ -35,6 +36,7 @@ import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Count;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.Flatten;
+import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.KV;
@@ -66,6 +68,8 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
   private final int expectedFailedDocumentCount;
 
   private final int expectedFinalESDocumentCount;
+
+  private final boolean assertOrdered;
 
   private final Elasticsearch7IO.Write<T> write;
 
@@ -107,6 +111,10 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
     return expectedFinalESDocumentCount;
   }
 
+  public boolean assertOrdered() {
+    return assertOrdered;
+  }
+
   public Elasticsearch7IO.Write<T> getWrite() {
     return write;
   }
@@ -127,6 +135,7 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
       int expectedSuccessDocumentCount,
       int expectedFailedDocumentCount,
       int expectedFinalESDocumentCount,
+      boolean assertOrdered,
       Elasticsearch7IO.Write<T> write,
       RestHighLevelClient restHighLevelClient,
       String esIndexName,
@@ -138,6 +147,7 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
     this.expectedSuccessDocumentCount = expectedSuccessDocumentCount;
     this.expectedFailedDocumentCount = expectedFailedDocumentCount;
     this.expectedFinalESDocumentCount = expectedFinalESDocumentCount;
+    this.assertOrdered = assertOrdered;
     this.write = write;
     this.restHighLevelClient = restHighLevelClient;
     this.esIndexName = esIndexName;
@@ -160,6 +170,8 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
     private RestHighLevelClient restHighLevelClient;
     private String esIndexName;
     private Function<Integer, V> generator;
+    // should we test that output is ordered
+    private boolean assertOrdered = false;
 
     private Builder() {}
 
@@ -198,6 +210,11 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
       return this;
     }
 
+    public Builder<T, V> assertOrdered(boolean assertOrdered) {
+      this.assertOrdered = assertOrdered;
+      return this;
+    }
+
     public Builder<T, V> withWrite(Elasticsearch7IO.Write<T> write) {
       this.write = write;
       return this;
@@ -227,6 +244,7 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
           expectedSuccessDocumentCount,
           expectedFailedDocumentCount,
           expectedFinalESDocumentCount,
+          assertOrdered,
           write,
           restHighLevelClient,
           esIndexName,
@@ -256,19 +274,29 @@ public class Elasticsearch7IOWritingTestRunner<T extends Writeable & DocWriteReq
     PCollectionList<BulkItemResponseContainer<T>> responseLists =
         PCollectionList.of(writeResult.getSuccessfulIndexing())
             .and(writeResult.getFailedIndexing());
+
     PCollection<BulkItemResponseContainer<T>> flattenResponses =
         responseLists.apply(Flatten.pCollections());
-    PCollection<KV<String, Long>> perBatchResponses =
+
+    PCollection<KV<String, BulkItemResponseContainer<T>>> kvpCollection =
         flattenResponses
             .apply(
                 MapElements.into(
                         TypeDescriptors.kvs(TypeDescriptor.of(String.class), typeDescriptor))
                     .via((BulkItemResponseContainer<T> item) -> KV.of(item.getBatchId(), item)))
-            .setCoder(KvCoder.of(StringUtf8Coder.of(), BulkItemResponseContainerCoder.of()))
-            .apply(Count.perKey());
+            .setCoder(KvCoder.of(StringUtf8Coder.of(), BulkItemResponseContainerCoder.of()));
+
+    PCollection<KV<String, Iterable<BulkItemResponseContainer<T>>>> perBatchResponses =
+        kvpCollection.apply(GroupByKey.create());
+
+    PCollection<KV<String, Long>> perBatchResponseCounts = kvpCollection.apply(Count.perKey());
 
     assertBatchContainsMaxElementCount(
-        perBatchResponses, getWrite().getMaxBatchSize(), getExpectedBatchCount());
+        perBatchResponseCounts, getWrite().getMaxBatchSize(), getExpectedBatchCount());
+
+    if (assertOrdered()) {
+      assertBatchOrder(perBatchResponses);
+    }
 
     // Run the pipeline
     getPipeline().run().waitUntilFinish();

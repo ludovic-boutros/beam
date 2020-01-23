@@ -19,7 +19,6 @@ package org.apache.beam.sdk.io.elasticsearch.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -87,7 +86,7 @@ public class Elasticsearch7IOReadingTestRunner implements Serializable {
     }
   }
 
-  public void run() throws IOException {
+  public void run() {
     PCollection<SearchHit> documents =
         getPipeline().apply("Read documents from Elasticsearch", getRead());
 

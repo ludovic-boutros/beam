@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
@@ -578,7 +578,7 @@ public class Elasticsearch7IO {
       private final TupleTag<BulkItemResponseContainer<T>> failedIndexingTag;
       private transient RestHighLevelClient restClient;
 
-      private HashMap<String, SerializableValueInSingleWindow<T>> batch;
+      private LinkedHashMap<String, SerializableValueInSingleWindow<T>> batch;
 
       private int currentBatchSizeBytes;
       private String currentBatchId;
@@ -620,7 +620,7 @@ public class Elasticsearch7IO {
       @StartBundle
       @SuppressWarnings("unused")
       public void startBundle(StartBundleContext context) {
-        batch = new HashMap<>(spec.getMaxBatchSize());
+        batch = new LinkedHashMap<>(spec.getMaxBatchSize());
         currentBatchSizeBytes = 0;
         currentBatchId = generateId();
       }

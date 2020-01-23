@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 import javax.net.ssl.SSLContext;
 import org.apache.beam.sdk.io.elasticsearch.BulkItemResponseContainer;
 import org.apache.beam.sdk.io.elasticsearch.WriteResult;
@@ -223,6 +224,41 @@ public class Elasticsearch7IOTestUtils {
         false);
   }
 
+  private static <T extends Comparable<? super T>> boolean isSorted(
+      final Iterable<? extends T> iterable) {
+    T previous = null;
+    for (final T current : iterable) { // iterable produces
+      if (previous != null // comparator consumes
+          && current.compareTo(previous) <= 0) {
+        return false;
+      }
+      previous = current;
+    }
+    return true;
+  }
+
+  static <T extends Writeable & DocWriteRequest<T>> void assertBatchOrder(
+      PCollection<KV<String, Iterable<BulkItemResponseContainer<T>>>> perBatchResponses) {
+    PAssert.that("Batches must keep request order", perBatchResponses)
+        .satisfies(
+            (SerializableFunction<
+                    Iterable<KV<String, Iterable<BulkItemResponseContainer<T>>>>, Void>)
+                element -> {
+                  element.forEach(
+                      batch -> {
+                        List<Integer> ids =
+                            StreamSupport.stream(batch.getValue().spliterator(), false)
+                                .map(BulkItemResponseContainer::getBulkItemResponse)
+                                .map(BulkItemResponse::getId)
+                                .map(Integer::parseInt)
+                                .collect(Collectors.toList());
+                        assertThat(isSorted(ids)).isTrue();
+                      });
+
+                  return null;
+                });
+  }
+
   static void assertBatchContainsMaxElementCount(
       PCollection<KV<String, Long>> perBatchResponses, int maxBatchSize, int batchCount) {
     PAssert.that(
@@ -327,9 +363,9 @@ public class Elasticsearch7IOTestUtils {
 
     if (!request.requests().isEmpty()) {
       restHighLevelClient.bulk(request, RequestOptions.DEFAULT);
-
-      assertDocumentCount(restHighLevelClient, esIndexName, count);
     }
+
+    assertDocumentCount(restHighLevelClient, esIndexName, count);
   }
 
   public static void createIndex(

@@ -31,7 +31,7 @@ Before you begin, install [Docker](https://www.docker.com/) on your workstation.
 You can add extra dependencies to container images so that you don't have to supply the dependencies to execution engines.
 
 To customize a container image, either:
-* [Write a new](#writing-new-dockerfiles) [Dockerfile](https://docs.docker.com/engine/reference/builder/) on top of the original.
+* [Write a new](#writing-new-dockerfiles) [Dockerfile](https://docs.docker.com/engine/reference/configuration/) on top of the original.
 * [Modify](#modifying-dockerfiles) the [original Dockerfile](https://github.com/apache/beam/blob/master/sdks/python/container/Dockerfile) and reimage the container.
 
 It's often easier to write a new Dockerfile. However, by modifying the original Dockerfile, you can customize anything (including the base OS).
@@ -42,7 +42,7 @@ It's often easier to write a new Dockerfile. However, by modifying the original 
 ```
 docker pull apachebeam/python3.7_sdk
 ```
-2. [Write a new Dockerfile](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/) that [designates](https://docs.docker.com/engine/reference/builder/#from) the original as its [parent](https://docs.docker.com/glossary/?term=parent%20image).
+2. [Write a new Dockerfile](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/) that [designates](https://docs.docker.com/engine/reference/configuration/#from) the original as its [parent](https://docs.docker.com/glossary/?term=parent%20image).
 3. [Build](#building-container-images) a child image.
 
 ### Modifying the original Dockerfile {#modifying-dockerfiles}

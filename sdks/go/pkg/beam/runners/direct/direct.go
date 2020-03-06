@@ -99,7 +99,7 @@ func Compile(edges []*graph.MultiEdge) (*exec.Plan, error) {
 
 	// (2) Constructs the plan units recursively.
 
-	b := &builder{
+	b := &configuration{
 		prev:  prev,
 		succ:  succ,
 		edges: edgeMap,
@@ -135,8 +135,8 @@ type linkID struct {
 	input int // input index. If > 0, it's a side or CoGBK input.
 }
 
-// builder is the recursive builder for non-root execution nodes.
-type builder struct {
+// configuration is the recursive configuration for non-root execution nodes.
+type configuration struct {
 	prev  map[int]int              // nodeID -> #incoming
 	succ  map[int][]linkID         // nodeID -> []linkID
 	edges map[int]*graph.MultiEdge // edgeID -> Edge
@@ -148,7 +148,7 @@ type builder struct {
 	idgen *exec.GenID
 }
 
-func (b *builder) makeNodes(out []*graph.Outbound) ([]exec.Node, error) {
+func (b *configuration) makeNodes(out []*graph.Outbound) ([]exec.Node, error) {
 	var ret []exec.Node
 	for _, o := range out {
 		n, err := b.makeNode(o.To.ID())
@@ -160,7 +160,7 @@ func (b *builder) makeNodes(out []*graph.Outbound) ([]exec.Node, error) {
 	return ret, nil
 }
 
-func (b *builder) makeNode(id int) (exec.Node, error) {
+func (b *configuration) makeNode(id int) (exec.Node, error) {
 	if n, ok := b.nodes[id]; ok {
 		return n, nil
 	}
@@ -199,7 +199,7 @@ func (b *builder) makeNode(id int) (exec.Node, error) {
 	return u, nil
 }
 
-func (b *builder) makeLinks(ids []linkID) ([]exec.Node, error) {
+func (b *configuration) makeLinks(ids []linkID) ([]exec.Node, error) {
 	var ret []exec.Node
 	for _, id := range ids {
 		n, err := b.makeLink(id)
@@ -211,7 +211,7 @@ func (b *builder) makeLinks(ids []linkID) ([]exec.Node, error) {
 	return ret, nil
 }
 
-func (b *builder) makeLink(id linkID) (exec.Node, error) {
+func (b *configuration) makeLink(id linkID) (exec.Node, error) {
 	if n, ok := b.links[id]; ok {
 		return n, nil
 	}

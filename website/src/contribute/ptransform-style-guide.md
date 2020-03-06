@@ -306,9 +306,9 @@ public abstract static class TwiddleThumbs extends PTransform<...> {
 
 Exception: when transform has a single overwhelmingly most important parameter, then call the factory method `of` and put the parameter into an argument of the factory method: `ParDo.of(DoFn).withAllowedLateness()`.
 
-##### Fluent builder methods for setting parameters
+##### Fluent configuration methods for setting parameters
 
-Call them `withBlah()`. All builder methods must return exactly the same type; if it's a parameterized (generic) type, with the same values of type parameters.
+Call them `withBlah()`. All configuration methods must return exactly the same type; if it's a parameterized (generic) type, with the same values of type parameters.
 
 Treat `withBlah()` methods as an unordered set of keyword arguments - result must not depend on the order in which you call `withFoo()` and `withBar()` (e.g., `withBar()` must not read the current value of foo).
 

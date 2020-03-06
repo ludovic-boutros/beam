@@ -29,7 +29,7 @@ be in `Row` format. A `Row` represents a single, immutable record in a Beam SQL
 `PCollection`. The names and types of the fields/columns in the row are defined
 by its associated [Schema](https://beam.apache.org/releases/javadoc/{{
 site.release_latest }}/index.html?org/apache/beam/sdk/schemas/Schema.html).
-You can use the [Schema.builder()](https://beam.apache.org/releases/javadoc/{{ site.release_latest
+You can use the [Schema.configuration()](https://beam.apache.org/releases/javadoc/{{ site.release_latest
 }}/index.html?org/apache/beam/sdk/schemas/Schema.html) to create
 `Schemas`. See [Data
 Types]({{ site.baseurl }}/documentation/dsls/sql/data-types) for more details on supported primitive data types.
@@ -45,7 +45,7 @@ A `PCollection<Row>` can be obtained multiple ways, for example:
     // Define the schema for the records.
     Schema appSchema = 
         Schema
-          .builder()
+          .configuration()
           .addInt32Field("appId")
           .addStringField("description")
           .addDateTimeField("rowtime")
@@ -130,7 +130,7 @@ to either a single `PCollection` or a `PCollectionTuple` which holds multiple
     // Create the schema for reviews
     Schema reviewSchema = 
         Schema
-          .builder()
+          .configuration()
           .addInt32Field("appId")
           .addInt32Field("reviewerId")
           .withFloatField("rating")

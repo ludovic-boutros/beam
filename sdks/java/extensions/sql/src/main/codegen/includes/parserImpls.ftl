@@ -271,7 +271,7 @@ Schema.FieldType Row() :
 {
     <ROW> fields = RowFields()
     {
-        Schema rowSchema = Schema.builder().addFields(fields).build();
+        Schema rowSchema = Schema.configuration().addFields(fields).build();
         return Schema.FieldType.row(rowSchema);
     }
 }

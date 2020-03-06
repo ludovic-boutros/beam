@@ -168,8 +168,8 @@ class ExternalTuplePayloadTest(PayloadBase, unittest.TestCase):
         ]
     )
 
-    builder = NamedTupleBasedPayloadBuilder(TestSchema(**values))
-    return builder.build()
+    configuration = NamedTupleBasedPayloadBuilder(TestSchema(**values))
+    return configuration.build()
 
   def get_payload_from_beam_typehints(self, values):
     raise unittest.SkipTest("Beam typehints cannot be used with "
@@ -182,15 +182,15 @@ class ExternalImplicitPayloadTest(unittest.TestCase):
   builders
   """
   def test_implicit_payload_builder(self):
-    builder = ImplicitSchemaPayloadBuilder(PayloadBase.values)
-    result = builder.build()
+    configuration = ImplicitSchemaPayloadBuilder(PayloadBase.values)
+    result = configuration.build()
     expected = get_payload(PayloadBase.args)
     self.assertEqual(result, expected)
 
   def test_implicit_payload_builder_with_bytes(self):
     values = PayloadBase.bytes_values
-    builder = ImplicitSchemaPayloadBuilder(values)
-    result = builder.build()
+    configuration = ImplicitSchemaPayloadBuilder(values)
+    result = configuration.build()
     if sys.version_info[0] < 3:
       # in python 2.x bytes coder will be inferred
       args = {

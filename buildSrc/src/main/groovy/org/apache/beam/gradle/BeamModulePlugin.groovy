@@ -364,6 +364,7 @@ class BeamModulePlugin implements Plugin<Project> {
     def aws_java_sdk2_version = "2.5.71"
     def cassandra_driver_version = "3.8.0"
     def classgraph_version = "4.8.56"
+    def elasticsearch7_driver_version = "7.5.1"
     def gax_version = "1.52.0"
     def generated_grpc_beta_version = "0.44.0"
     def generated_grpc_ga_version = "1.83.0"
@@ -436,6 +437,7 @@ class BeamModulePlugin implements Plugin<Project> {
         commons_lang3                               : "org.apache.commons:commons-lang3:3.9",
         commons_math3                               : "org.apache.commons:commons-math3:3.6.1",
         error_prone_annotations                     : "com.google.errorprone:error_prone_annotations:2.0.15",
+        elasticsearch7                              : "org.elasticsearch.client:elasticsearch-rest-high-level-client:$elasticsearch7_driver_version",
         gax                                         : "com.google.api:gax:$gax_version",
         gax_grpc                                    : "com.google.api:gax-grpc:$gax_version",
         google_api_client                           : "com.google.api-client:google-api-client:$google_clients_version",

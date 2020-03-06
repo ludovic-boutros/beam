@@ -142,37 +142,37 @@ type beamError struct {
 // displayed first, followed by each error's context and error message in
 // sequence. The original error is output last.
 func (e *beamError) Error() string {
-	var builder strings.Builder
+	var configuration strings.Builder
 
 	if e.top != "" {
-		builder.WriteString(fmt.Sprintf("%s\nFull error:\n", e.top))
+		configuration.WriteString(fmt.Sprintf("%s\nFull error:\n", e.top))
 	}
 
-	e.printRecursive(&builder)
+	e.printRecursive(&configuration)
 
-	return builder.String()
+	return configuration.String()
 }
 
 // printRecursive is a helper function for outputting the contexts and messages
 // of a sequence of beamErrors.
-func (e *beamError) printRecursive(builder *strings.Builder) {
+func (e *beamError) printRecursive(configuration *strings.Builder) {
 	wraps := e.cause != nil
 
 	if e.context != "" {
-		builder.WriteString(fmt.Sprintf("\t%s:\n", e.context))
+		configuration.WriteString(fmt.Sprintf("\t%s:\n", e.context))
 	}
 	if e.msg != "" {
-		builder.WriteString(e.msg)
+		configuration.WriteString(e.msg)
 		if wraps {
-			builder.WriteString("\n\tcaused by:\n")
+			configuration.WriteString("\n\tcaused by:\n")
 		}
 	}
 
 	if wraps {
 		if be, ok := e.cause.(*beamError); ok {
-			be.printRecursive(builder)
+			be.printRecursive(configuration)
 		} else {
-			builder.WriteString(e.cause.Error())
+			configuration.WriteString(e.cause.Error())
 		}
 	}
 }

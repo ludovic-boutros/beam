@@ -96,7 +96,7 @@ func UnmarshalPlan(desc *fnpb.ProcessBundleDescriptor) (*Plan, error) {
 	return b.build()
 }
 
-type builder struct {
+type configuration struct {
 	desc   *fnpb.ProcessBundleDescriptor
 	coders *graphx.CoderUnmarshaller
 
@@ -117,7 +117,7 @@ type linkID struct {
 	input int    // input index. If > 0, it's a side input.
 }
 
-func newBuilder(desc *fnpb.ProcessBundleDescriptor) (*builder, error) {
+func newBuilder(desc *fnpb.ProcessBundleDescriptor) (*configuration, error) {
 	// Preprocess graph structure to allow insertion of Multiplex,
 	// Flatten and Discard.
 
@@ -139,7 +139,7 @@ func newBuilder(desc *fnpb.ProcessBundleDescriptor) (*builder, error) {
 		}
 	}
 
-	b := &builder{
+	b := &configuration{
 		desc:   desc,
 		coders: graphx.NewCoderUnmarshaller(desc.GetCoders()),
 
@@ -155,11 +155,11 @@ func newBuilder(desc *fnpb.ProcessBundleDescriptor) (*builder, error) {
 	return b, nil
 }
 
-func (b *builder) build() (*Plan, error) {
+func (b *configuration) build() (*Plan, error) {
 	return NewPlan(b.desc.GetId(), b.units)
 }
 
-func (b *builder) makeWindowingStrategy(id string) (*window.WindowingStrategy, error) {
+func (b *configuration) makeWindowingStrategy(id string) (*window.WindowingStrategy, error) {
 	if w, exists := b.windowing[id]; exists {
 		return w, nil
 	}
@@ -224,7 +224,7 @@ func unmarshalWindowFn(wfn *pb.FunctionSpec) (*window.Fn, error) {
 	}
 }
 
-func (b *builder) makePCollections(out []string) ([]Node, error) {
+func (b *configuration) makePCollections(out []string) ([]Node, error) {
 	var ret []Node
 	for _, o := range out {
 		n, err := b.makePCollection(o)
@@ -236,7 +236,7 @@ func (b *builder) makePCollections(out []string) ([]Node, error) {
 	return ret, nil
 }
 
-func (b *builder) makeCoderForPCollection(id string) (*coder.Coder, *coder.WindowCoder, error) {
+func (b *configuration) makeCoderForPCollection(id string) (*coder.Coder, *coder.WindowCoder, error) {
 	col, ok := b.desc.GetPcollections()[id]
 	if !ok {
 		return nil, nil, errors.Errorf("pcollection %v not found", id)
@@ -264,7 +264,7 @@ func (b *builder) makeCoderForPCollection(id string) (*coder.Coder, *coder.Windo
 	return c, wc, nil
 }
 
-func (b *builder) makePCollection(id string) (Node, error) {
+func (b *configuration) makePCollection(id string) (Node, error) {
 	if n, exists := b.nodes[id]; exists {
 		return n, nil
 	}
@@ -303,7 +303,7 @@ func (b *builder) makePCollection(id string) (Node, error) {
 	return u, nil
 }
 
-func (b *builder) makeLinks(from string, ids []linkID) ([]Node, error) {
+func (b *configuration) makeLinks(from string, ids []linkID) ([]Node, error) {
 	var ret []Node
 	for _, id := range ids {
 		n, err := b.makeLink(from, id)
@@ -315,7 +315,7 @@ func (b *builder) makeLinks(from string, ids []linkID) ([]Node, error) {
 	return ret, nil
 }
 
-func (b *builder) makeLink(from string, id linkID) (Node, error) {
+func (b *configuration) makeLink(from string, id linkID) (Node, error) {
 	if n, ok := b.links[id]; ok {
 		return n, nil
 	}

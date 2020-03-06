@@ -54,7 +54,7 @@ func NewScopeTree(edges []*graph.MultiEdge) *ScopeTree {
 	return t.root
 }
 
-// treeBuilder is a builder of a ScopeTree from any set of edges and
+// treeBuilder is a configuration of a ScopeTree from any set of edges and
 // scopes from the same graph.
 type treeBuilder struct {
 	root    *ScopeTree

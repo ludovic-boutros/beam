@@ -3087,7 +3087,7 @@ MetricQueryResults metrics =
     pipelineResult
         .metrics()
         .queryMetrics(
-            MetricsFilter.builder()
+            MetricsFilter.configuration()
                 .addNameFilter(MetricNameFilter.named("namespace", "counter1"))
                 .build());
 
